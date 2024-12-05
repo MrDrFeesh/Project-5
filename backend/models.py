@@ -1,6 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from config import db
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -14,9 +12,11 @@ class Build(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     priority = db.Column(db.Integer, default=0)
+    folder_path = db.Column(db.String(200), nullable=True)
+    code = db.Column(db.String, unique=True, nullable=True)
     votes = db.relationship('Vote', backref='build', lazy=True)
-    perks = db.relationship('Perk', secondary='build_perk', lazy='subquery',
-                            backref=db.backref('builds', lazy=True))
+    perks = db.relationship('Perk', secondary='build_perk', backref=db.backref('builds', lazy='dynamic'))
+    __table_args__ = (db.UniqueConstraint('code', name='uq_build_code'),)
 
 class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
