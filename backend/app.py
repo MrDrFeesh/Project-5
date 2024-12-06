@@ -113,6 +113,12 @@ def update_build(build_id):
 
     return jsonify({'message': 'Build updated successfully', 'build': {'id': build.id, 'user_id': build.user_id, 'folder_path': build.folder_path, 'perks': [{'id': perk.id, 'name': perk.name, 'image': perk.image} for perk in build.perks]}}), 200
 
+@app.route('/api/builds/codes', methods=['GET'])
+def get_all_codes():
+    builds = Build.query.filter(Build.code.isnot(None)).all()
+    codes = [build.code for build in builds]
+    return jsonify({'codes': codes})
+
 @app.route('/api/builds/<int:build_id>/code', methods=['POST'])
 def save_build_code(build_id):
     data = request.json
@@ -124,6 +130,19 @@ def save_build_code(build_id):
     db.session.commit()
 
     return jsonify({'message': 'Code saved successfully'}), 200
+
+@app.route('/api/builds/code/<string:code>', methods=['GET'])
+def get_build_by_code(code):
+    build = Build.query.filter_by(code=code).first()
+    if not build:
+        return jsonify({'message': 'Build not found'}), 404
+
+    return jsonify({
+        'id': build.id,
+        'user_id': build.user_id,
+        'folder_path': build.folder_path,
+        'perks': [{'id': perk.id, 'name': perk.name, 'image': perk.image} for perk in build.perks]
+    })
 
 @app.route('/api/builds/<int:build_id>/vote', methods=['POST'])
 def vote_build(build_id):
@@ -154,7 +173,6 @@ def get_user():
         return jsonify({'message': 'User not found'}), 404
 
     builds = Build.query.filter_by(user_id=user_id).all()
-    votes = Vote.query.filter_by(user_id=user_id).count()
     builds_data = []
     for build in builds:
         build_data = {
@@ -170,7 +188,7 @@ def get_user():
         'username': user.username,
         'email': user.email,
         'builds': builds_data,
-        'votes': votes
+        'votes': user.votes  # Ensure votes are included
     })
 
 @app.route('/api/perks', methods=['GET'])
